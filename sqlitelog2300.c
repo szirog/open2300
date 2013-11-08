@@ -94,7 +94,8 @@ void state_init(struct state* state, struct config_type *config, const char *db_
 	for(i = 0; column_names[i] != NULL; i++) {
 		if(strcmp(column_names[i], "datetime") == 0)
 		{
-			strncat(query, "datetime('now')", QUERY_BUF_SIZE);
+			/* Modified the original datetime to localtime */
+			strncat(query, "datetime('localtime(now)')", QUERY_BUF_SIZE);
 		}
 		else
 		{
