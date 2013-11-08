@@ -1,4 +1,18 @@
-/*  open2300 - histlog2300.c
+/*  
+ *  open2300 - sqlitehistlog2300.c
+ *  
+ *  Open2300 1.11  - sqlitehistlog2300 1.0
+ *
+ *  Get history data fromn WS2300 weather station
+ *  and the unstored records store in an SQLite database
+ *
+ *  This program is published uhder the GNU General Public License 
+ *
+ * Copyright 2013, SziroG
+*/ 
+
+/* The first initial source file headers below */ 
+/* open2300 - histlog2300.c
  *  
  *  Version 1.15 (open200 1.11) Lars Hinrichsen
  *  
@@ -15,7 +29,24 @@
  *  1.15 2007  July 19  EmilianoParasassi
  *             http://www.lavrsen.dk/twiki/bin/view/Open2300/MysqlPatch2 
  */
-#include <mysql.h>
+
+/* The second used source file headers below */ 
+/*		 sqlitelog2300.c
+ *
+ *		 Open2300 1.11 - sqlitelog2300 1.0
+ *
+ *		 Get current data from WS2300 weather station
+ *		 and add store it in an SQLite database
+ *
+ *		 Copyright 2010, Wesley Moore
+ *
+ *		 This program is published under the GNU General Public license
+ *
+ */
+
+
+
+#include <sqlite3.h>
 #include "rw2300.h"
 
 
@@ -32,11 +63,11 @@
 void print_usage(void)
 {
 	printf("\n");
-	printf("mysqlhistlog2300 - Log history data from WS-2300 to MySQL.\n");
-	printf("Version %s (C)2007 Kenneth Lavrsen, Lars Hinrichsen.\n", VERSION);
+	printf("sqlitehistlog2300 - Log history data from WS-2300 to SQLite.\n");
+	printf("Version %s (C)2013 SziroG\n", VERSION);
 	printf("This program is released under the GNU General Public License (GPL)\n\n");
 	printf("Usage:\n");
-	printf("mysqlhistlog2300 config_filename\n");
+	printf("sqlitehistlog2300 sqlite_db_filename config_filename\n");
 	exit(0);
 }
 
