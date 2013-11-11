@@ -10,6 +10,13 @@
  *		 This program is published under the GNU General Public license
  *
  */
+/*		 Corrected sqlitelog2300.c - sqlitelog2300 1.0
+ *
+ *		 Store the localtime instead of the raw time (Now) value 
+ *
+ *		 2013, Modified by SziroG
+ *
+ */
 
 #include <sqlite3.h>
 #include "rw2300.h"
@@ -92,16 +99,19 @@ void state_init(struct state* state, struct config_type *config, const char *db_
 	}
 	strncat(query, ") VALUES (", QUERY_BUF_SIZE);
 	for(i = 0; column_names[i] != NULL; i++) {
+/*	Commented out by SziroG  
 		if(strcmp(column_names[i], "datetime") == 0)
 		{
-			/* Modified the original datetime to localtime */
-			strncat(query, "datetime('localtime(now)')", QUERY_BUF_SIZE);
 		}
 		else
 		{
+*/
 			strncat(query, ":", QUERY_BUF_SIZE);
 			strncat(query, column_names[i], QUERY_BUF_SIZE);
+
+/*	Commented out by SziroG  
 		}
+*/
 		if(column_names[i + 1] != NULL) strncat(query, ", ", QUERY_BUF_SIZE);
 	}
 	strncat(query, ")", QUERY_BUF_SIZE);
@@ -204,6 +214,9 @@ int main(int argc, char *argv[])
 							   "S","SSW","SW","WSW","W","WNW","NW","NNW"};
 	int rc;
 
+	time_t rt;
+	char rtstring[50];
+
 	/* Read the configuration */
 	if(argc >= 3) {
 		get_configuration(&config, argv[2]);
@@ -218,6 +231,13 @@ int main(int argc, char *argv[])
 
 	struct state s;
 	state_init(&s, &config, argv[1], columns);
+
+        /* Inserted by SziroG   
+	   CURRENT LOCAL DATE & TIME */
+	time(&rt);
+	strftime(rtstring, sizeof(rtstring), "%Y-%m-%d %H:%M:%S", localtime(&rt));
+	rc = sqlite3_bind_text(s.statement, sqlite3_bind_parameter_index(s.statement, ":datetime"), rtstring, -1, SQLITE_STATIC);
+	check_rc(&s, rc);
 
 	/* Read the weather station values and bind them to the prepared statement */
 
