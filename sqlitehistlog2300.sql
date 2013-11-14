@@ -1,7 +1,7 @@
 
 CREATE TABLE weather_history (
-  sys_read_datetime datetime PRIMARY KEY,
-  ws_cal_datetime datetime NOT NULL,
+  sys_datetime datetime NOT NULL,
+  ws_datetime datetime PRIMARY KEY,
   temperature_in decimal(4,1) NOT NULL,
   temperature_out decimal(4,1) NOT NULL,
   dewpoint decimal(4,1) NOT NULL,

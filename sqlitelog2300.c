@@ -82,7 +82,7 @@ void state_init(struct state* state, struct config_type *config, const char *db_
 	/* Connect to the database */
 	rc = sqlite3_open(db_path, &state->db);
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "Unable to open database (%s): %s\n", db_path, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to open database (%s): %s\n", db_path, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
@@ -92,7 +92,7 @@ void state_init(struct state* state, struct config_type *config, const char *db_
 	query[QUERY_BUF_SIZE] = '\0';
 
 	/* Build the query */
-	strncat(query, "INSERT INTO weather (", QUERY_BUF_SIZE);
+	strncat(query, "INSERT INTO weather_log (", QUERY_BUF_SIZE);
 	for(i = 0; column_names[i] != NULL; i++) {
 		strncat(query, column_names[i], QUERY_BUF_SIZE);
 		if(column_names[i + 1] != NULL) strncat(query, ", ", QUERY_BUF_SIZE);
@@ -120,7 +120,7 @@ void state_init(struct state* state, struct config_type *config, const char *db_
 	int nByte = -1;
 	rc = sqlite3_prepare_v2(state->db, query, nByte, &state->statement, NULL);
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "Unable to prepare query (%s): %s\n", query, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to prepare query (%s): %s\n", query, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
@@ -161,7 +161,7 @@ void state_finish(struct state* state)
 void check_rc(struct state* state, int rc)
 {
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "Unable to bind value: %s\n", sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to bind value: %s\n", sqlite3_errmsg(state->db));
 		state_finish(state);
 		exit(EXIT_FAILURE);
 	}
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 		NULL
 	};
 	const char *directions[]= {"N","NNE","NE","ENE","E","ESE","SE","SSE",
-							   "S","SSW","SW","WSW","W","WNW","NW","NNW"};
+				   "S","SSW","SW","WSW","W","WNW","NW","NNW"};
 	int rc;
 
 	time_t rt;
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 	rc = sqlite3_step(s.statement);
 	if(rc != SQLITE_DONE)
 	{
-		fprintf(stderr, "Error executing query: %s\n", sqlite3_errmsg(s.db));
+		fprintf(stderr, "\nError executing query: %s\n", sqlite3_errmsg(s.db));
 		state_finish(&s);
 		exit(EXIT_FAILURE);
 	}

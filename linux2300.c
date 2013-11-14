@@ -185,6 +185,7 @@ int read_device(WEATHERSTATION serdevice, unsigned char *buffer, int size)
 	int ret;
 
 	for (;;) {
+		sleep_short(200);
 		ret = read(serdevice, buffer, size);
 		if (ret == 0 && errno == EINTR)
 			continue;
@@ -207,6 +208,7 @@ int write_device(WEATHERSTATION serdevice, unsigned char *buffer, int size)
 {
 	int ret = write(serdevice, buffer, size);
 	tcdrain(serdevice);	// wait for all output written
+	sleep_short(400);
 	return ret;
 }
 

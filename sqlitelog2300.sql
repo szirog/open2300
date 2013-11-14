@@ -1,6 +1,6 @@
 -- Schema for SQLite weather db
 -- Load from the sqlite3 shell: .read sqlitelog2300.sql
-CREATE TABLE weather (
+CREATE TABLE weather_log (
   datetime datetime PRIMARY KEY,
   temperature_in decimal(4,1) NOT NULL,
   temperature_out decimal(4,1) NOT NULL,
