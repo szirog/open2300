@@ -108,7 +108,7 @@ void state_init(struct state* state, const char *db_path, char *query)
 	/* Connect to the database */
 	rc = sqlite3_open(db_path, &state->db);
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "\nUnable to open database (%s): %s\n", db_path, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to open database (%s): %s\n\n", db_path, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
@@ -117,7 +117,7 @@ void state_init(struct state* state, const char *db_path, char *query)
 	int nByte = -1;
 	rc = sqlite3_prepare_v2(state->db, query, nByte, &state->statement, NULL);
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "\nUnable to prepare query (%s): %s\n", query, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to prepare query (%s): %s\n\n", query, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
@@ -142,13 +142,13 @@ void state_reinit(struct state* state, char *query)
 	rc = sqlite3_step(state->statement);
 	if (rc != SQLITE_DONE) 
 	{
-		fprintf(stderr, "\nUnable to execute query (%s): %s\n", query, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to execute query (%s): %s\n\n", query, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
 	rc = sqlite3_finalize(state->statement);
 	if (rc != SQLITE_OK) {
-		fprintf(stderr, "\nUnable to execute query (%s): %s\n", query, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to execute query (%s): %s\n\n", query, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
@@ -158,7 +158,7 @@ void state_reinit(struct state* state, char *query)
 	rc = sqlite3_prepare_v2(state->db, query, nByte, &state->statement, NULL);
 	if(rc != SQLITE_OK) 
 	{
-		fprintf(stderr, "\nUnable to prepare query (%s): %s\n", query, sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to prepare query (%s): %s\n\n", query, sqlite3_errmsg(state->db));
 		sqlite3_close(state->db);
 		exit(EXIT_FAILURE);
 	}
@@ -202,7 +202,7 @@ void check_rc(struct state* state, int rc)
 {
 	if(rc != SQLITE_OK) 
 	{
-		fprintf(stderr, "\nUnable to bind value: %s\n", sqlite3_errmsg(state->db));
+		fprintf(stderr, "\nUnable to bind value: %s\n\n", sqlite3_errmsg(state->db));
 		state_finish(state);
 		exit(EXIT_FAILURE);
 	}
@@ -222,9 +222,13 @@ void check_rc(struct state* state, int rc)
  ********************************************************************/
 void check_maxretries(int no, char *msg)
 {
-		if (no==MAXRETRIES)
+	time_t et;
+	char etstring[50];
+	if (no==MAXRETRIES)
 		{
-			fprintf(stderr, msg);
+			time(&et);
+			strftime(etstring, sizeof(etstring), "%Y-%m-%d %H:%M:%S", localtime(&et));
+			fprintf(stderr,"\nSQLitehistlog2300 - %s, %s\n\n", etstring, msg);
 			exit(EXIT_FAILURE);
 		}
 }
@@ -385,7 +389,7 @@ int main(int argc, char *argv[])
 		
 		// If we have tried MAXRETRIES times to read we expect not to
 		// have valid data
-		check_maxretries( i, "\nError syncing date - data writing error\n");
+		check_maxretries( i, "error syncing date - data writing error");
 
 		// Convert time
 		sprintf( (char*) data, "%02d%02d%02d", wst->tm_hour, wst->tm_min, wst->tm_sec );
@@ -416,7 +420,7 @@ int main(int argc, char *argv[])
 		
 		// If we have tried MAXRETRIES times to read we expect not to
 		// have valid data
-		check_maxretries( i, "\nError syncing time - data writing error\n");
+		check_maxretries( i, "error syncing time - data writing error");
 		
 		// Check written date and time
 		for(i=0;i<MAXRETRIES;i++)
@@ -432,7 +436,7 @@ int main(int argc, char *argv[])
 	
 		// If we have tried MAXRETRIES times to read we expect not to
 		// have valid data
-		check_maxretries( i, "\nError syncing date & time - written data reading error\n");
+		check_maxretries( i, "error syncing date & time - written data reading error");
 		
 		// 023C 2    Current Time: Minutes BCD 10s 			8	023B 6    Current Time: Minutes BCD 1s			9
 		// 023E 0    Current Time: Hours BCD 10s			6	023D 3    Current Time: Hours BCD 1s			7
@@ -452,17 +456,15 @@ int main(int argc, char *argv[])
 		}
 		//printf("%s %s \n", rtstring, command); // this command line is only for testing !!!
 		if (strncmp( rtstring, (char*) command, 12) != 0)
-		{
-			fprintf(stderr, "\nError syncing date & time - difference(s) between written and read data\n");
-			exit(EXIT_FAILURE);		
-		}
+		check_maxretries( MAXRETRIES, "error syncing date & time - difference(s) between written and read data");
+	
 	}
 	
 	// Open SQLite database file for querying maximal date in existing history data
 	state_init(&s, argv[1], select_stmt);
 	rc = sqlite3_step (s.statement);
 	if(rc != SQLITE_ROW) {
-		fprintf(stderr, "\Error during max date query execution (%s): %s\n", sqlite3_sql(s.statement), sqlite3_errmsg(s.db));
+		fprintf(stderr, "\nError during max date query execution (%s): %s\n\n", sqlite3_sql(s.statement), sqlite3_errmsg(s.db));
 		sqlite3_close(s.db);
 		exit(EXIT_FAILURE);
 	}	
@@ -641,7 +643,7 @@ int main(int argc, char *argv[])
 			rc = sqlite3_step(s.statement);
 			if (rc != SQLITE_DONE) 
 			{
-				fprintf(stderr, "\nUnable to execute query (%s): %s\n", sqlite3_sql(s.statement), sqlite3_errmsg(s.db));
+				fprintf(stderr, "\nUnable to execute query (%s): %s\n\n", sqlite3_sql(s.statement), sqlite3_errmsg(s.db));
 				sqlite3_close(s.db);
 				exit(EXIT_FAILURE);
 			}
@@ -657,13 +659,13 @@ int main(int argc, char *argv[])
 		strftime(datestring, sizeof(datestring), "%Y-%m-%d %H:%M:%S", wst);
 		// We print the following summary row to the standard error output because if the program is started by the CRON 
 		// this message will appear in the CRON log file, if CRON started with the "-L"  option
-		fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file with time (%s) synchronization in %.1f second(s).\n", datestring, new_records, argv[1], argv[argc-1], difftime(time(NULL),mktime(wst)));
+		fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file with time (%s) synchronization in %.1f second(s)\n\n", datestring, new_records, argv[1], argv[argc-1], difftime(time(NULL),mktime(wst)));
 	}
 	else
 	{
 		// We print the following summary row to the standard error output because if the program is started by the CRON 
 		// this message will appear in the CRON log file, if CRON started with the "-L"  option
-		fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file in %.1f second(s).\n", rtstring, new_records, argv[1], difftime(time(NULL),rt));
+		fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file in %.1f second(s)\n\n", rtstring, new_records, argv[1], difftime(time(NULL),rt));
 	}
 	return(EXIT_SUCCESS);
 } 
