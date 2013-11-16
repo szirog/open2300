@@ -303,62 +303,60 @@ int main(int argc, char *argv[])
 	const int ws_date_addr = 0x024D;
 	const int ws_datetime_addr = 0x023B;
 	char * tmpstr;
+	bool ws_datetime_sync = FALSE;
 	
 	// Check the running parameters
 	switch (argc) 
 	{
 		case   4:
 			if ((strncmp(argv[3],ws_localtime_sync,strlen(argv[3])) == 0) || (strncmp(argv[3],ws_utctime_sync,strlen(argv[3])) == 0))
-			{
-				time(&rt);
-				if ( strncmp(argv[3],ws_localtime_sync,strlen(argv[3])) == 0 )
-				wst = localtime(&rt);
-				else wst = gmtime(&rt);
-			} 
+			ws_datetime_sync = TRUE;
 			else 
 			{
 				print_usage();
-				exit(2);
+				exit(EXIT_FAILURE);
 			}	
 		case   3:
 			if (get_configuration(&config, argv[2]) == -1)
 			{ 
 				print_usage();
-				exit(2);
+				exit(EXIT_FAILURE);
 			}
 			else
 			{
-			if ((strncmp(argv[2],ws_localtime_sync,strlen(argv[2])) == 0) || (strncmp(argv[2],ws_utctime_sync,strlen(argv[2])) == 0)) 
-				{
-					time(&rt);
-					if ( strncmp(argv[2],ws_localtime_sync,strlen(argv[2])) == 0 ) 
-					wst = localtime(&rt);
-					else wst = gmtime(&rt);
-				} 			
+				if ((strncmp(argv[2],ws_localtime_sync,strlen(argv[2])) == 0) || (strncmp(argv[2],ws_utctime_sync,strlen(argv[2])) == 0)) 
+				ws_datetime_sync = TRUE;
 			}
 			break;
 		case   2:
 			if (get_configuration(&config, NULL) == -1)
 			{ 
 				print_usage();
-				exit(2);
+				exit(EXIT_FAILURE);
 			}
 			break;
 		default	:
 			print_usage();
-			exit(2);
+			exit(EXIT_FAILURE);
 	}	
 
 	// Setup WS23XX serial port
 	ws2300 = open_weatherstation(config.serial_device_name);
 
+/*
 	if ( (strncmp(argv[argc-2],ws_localtime_sync,strlen(argv[argc-2])) == 0) || (strncmp(argv[argc-2],ws_utctime_sync,strlen(argv[argc-2])) == 0) ||
 	     (strncmp(argv[argc-1],ws_localtime_sync,strlen(argv[argc-1])) == 0) || (strncmp(argv[argc-1],ws_utctime_sync,strlen(argv[argc-1])) == 0)    ) 
+*/
+	time(&rt);
+	if ( ws_datetime_sync )
 	// Sync WS23XX date & time before reading the history
 	{
+		// Get, correct and convert date
+		if ( strncmp(argv[argc-1],ws_localtime_sync,strlen(argv[argc-1])) == 0 ) 
+		wst = localtime(&rt);
+		else wst = gmtime(&rt);
 		//strftime(datestring, sizeof(datestring), "%Y-%m-%d %H:%M:%S %Z %z", wst); // this command line is only for testing !!!
 		//printf ("%s\n", datestring); // this command line is only for testing !!!
-		// Correct and convert date
 		wst->tm_year += 1900;
 		wst->tm_mon++;
 		sprintf( (char*) data, "%02d%02d%02d", (int)(wst->tm_year % 100), wst->tm_mon, wst->tm_mday);
@@ -459,7 +457,9 @@ int main(int argc, char *argv[])
 		check_maxretries( MAXRETRIES, "error syncing date & time - difference(s) between written and read data");
 	
 	}
-	
+	else 		
+	wst = localtime(&rt);
+
 	// Open SQLite database file for querying maximal date in existing history data
 	state_init(&s, argv[1], select_stmt);
 	rc = sqlite3_step (s.statement);
@@ -653,19 +653,13 @@ int main(int argc, char *argv[])
 	state_finish(&s);
 	close_weatherstation(ws2300);
 
-    // Output a summary row
-	if (wst != NULL)
-	{
-		strftime(datestring, sizeof(datestring), "%Y-%m-%d %H:%M:%S", wst);
-		// We print the following summary row to the standard error output because if the program is started by the CRON 
-		// this message will appear in the CRON log file, if CRON started with the "-L"  option
-		fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file with time (%s) synchronization in %.1f second(s)\n\n", datestring, new_records, argv[1], argv[argc-1], difftime(time(NULL),mktime(wst)));
-	}
+	// Convert the beginning of the execution
+	strftime(datestring, sizeof(datestring), "%Y-%m-%d %H:%M:%S", wst);
+	// We print the following summary row to the standard error output because if the program is started by the CRON 
+	// this message will appear in the CRON log file, if CRON started with the "-L"  option
+	if (wst_datetime_sync )
+	fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file with time (%s) synchronization in %.1f second(s)\n\n", datestring, new_records, argv[1], argv[argc-1], difftime(time(NULL),mktime(wst)));
 	else
-	{
-		// We print the following summary row to the standard error output because if the program is started by the CRON 
-		// this message will appear in the CRON log file, if CRON started with the "-L"  option
-		fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file in %.1f second(s)\n\n", rtstring, new_records, argv[1], difftime(time(NULL),rt));
-	}
+	fprintf(stderr, "\nSQLitehistlog2300 - %s, %d record(s) has written into \"%s\" SQLite database file in %.1f second(s)\n\n", datestring, new_records, argv[1], difftime(time(NULL),mktime(wst)));
 	return(EXIT_SUCCESS);
 } 
